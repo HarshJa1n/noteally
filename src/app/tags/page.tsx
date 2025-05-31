@@ -5,4 +5,4 @@ export default function TagsPage() {
       <p className="text-gray-600">Organize and manage your note tags here.</p>
     </div>
   )
-} 
+}
