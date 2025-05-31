@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Camera, X, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { runFlow } from '@genkit-ai/next/client'
@@ -37,45 +37,64 @@ export default function CameraCapture({
   }, [])
 
   const startCamera = useCallback(async (deviceId?: string) => {
+    setError('')
+    setIsStreaming(false)
+    
     try {
-      setError('')
-      
-      // Get available devices first
-      const allDevices = await navigator.mediaDevices.enumerateDevices()
-      const videoDevices = allDevices.filter(device => device.kind === 'videoinput')
-      setDevices(videoDevices)
-      
-      if (videoDevices.length === 0) {
-        throw new Error('No camera devices found')
-      }
-
-      // Use selected device or default to first available
-      const deviceToUse = deviceId || videoDevices[0].deviceId
-      setSelectedDeviceId(deviceToUse)
+      console.log('Starting camera with deviceId:', deviceId)
       
       const constraints: MediaStreamConstraints = {
-        video: { 
-          deviceId: deviceToUse ? { exact: deviceToUse } : undefined,
+        video: {
+          deviceId: deviceId ? { exact: deviceId } : undefined,
           width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
+          height: { ideal: 720 },
+          facingMode: deviceId ? undefined : 'environment'
+        }
       }
 
+      console.log('Requesting media with constraints:', constraints)
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      streamRef.current = stream
+      console.log('Got media stream:', stream)
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        await videoRef.current.play()
-        setIsStreaming(true)
+        
+        // Wait for the video to load metadata
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, starting stream')
+          setIsStreaming(true)
+          
+          // Start the video playback
+          videoRef.current?.play().catch((playError) => {
+            console.error('Error playing video:', playError)
+            setError('Failed to start video playback')
+          })
+        }
+        
+        // Handle video errors
+        videoRef.current.onerror = (e) => {
+          console.error('Video element error:', e)
+          setError('Video playback error')
+        }
       }
+      
     } catch (err) {
       console.error('Error accessing camera:', err)
-      setError(err instanceof Error ? err.message : 'Failed to access camera')
-      stopStream()
+      if (err instanceof Error) {
+        if (err.name === 'NotAllowedError') {
+          setError('Camera access denied. Please allow camera permissions and try again.')
+        } else if (err.name === 'NotFoundError') {
+          setError('No camera found. Please connect a camera and try again.')
+        } else if (err.name === 'NotReadableError') {
+          setError('Camera is already in use by another application.')
+        } else {
+          setError(`Camera error: ${err.message}`)
+        }
+      } else {
+        setError('Failed to access camera')
+      }
     }
-  }, [stopStream])
+  }, [])
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !isStreaming) return
@@ -144,6 +163,28 @@ export default function CameraCapture({
     startCamera(selectedDeviceId)
   }, [startCamera, selectedDeviceId])
 
+  // Initialize available devices
+  useEffect(() => {
+    const initializeDevices = async () => {
+      try {
+        const allDevices = await navigator.mediaDevices.enumerateDevices()
+        const videoDevices = allDevices.filter(device => device.kind === 'videoinput')
+        setDevices(videoDevices)
+        
+        if (videoDevices.length > 0) {
+          setSelectedDeviceId(videoDevices[0].deviceId)
+        }
+        
+        console.log('Found video devices:', videoDevices)
+      } catch (err) {
+        console.error('Error enumerating devices:', err)
+        setError('Failed to access camera devices')
+      }
+    }
+
+    initializeDevices()
+  }, [])
+
   return (
     <div className={`w-full space-y-4 ${className}`}>
       {/* Camera Controls */}
@@ -191,20 +232,33 @@ export default function CameraCapture({
       {/* Camera Stream */}
       {isStreaming && (
         <div className="space-y-4">
-          <div className="relative bg-black rounded-lg overflow-hidden">
+          <div className="relative bg-black rounded-lg overflow-hidden min-h-[300px] flex items-center justify-center">
             <video
               ref={videoRef}
-              className="w-full h-auto"
+              className="w-full h-auto max-w-full max-h-[60vh] object-contain"
               playsInline
               muted
+              autoPlay
+              style={{ display: isStreaming ? 'block' : 'none' }}
             />
+            
+            {/* Loading indicator while camera is starting */}
+            {isStreaming && !videoRef.current?.videoWidth && (
+              <div className="absolute inset-0 flex items-center justify-center text-white">
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  <p>Initializing camera...</p>
+                </div>
+              </div>
+            )}
             
             {/* Capture Controls Overlay */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
               <Button 
                 onClick={capturePhoto}
                 size="lg"
-                className="bg-white text-black hover:bg-gray-100 rounded-full w-16 h-16"
+                className="bg-white text-black hover:bg-gray-100 rounded-full w-16 h-16 shadow-lg"
+                disabled={!isStreaming}
               >
                 <Camera className="w-6 h-6" />
               </Button>
@@ -212,7 +266,7 @@ export default function CameraCapture({
                 onClick={stopStream}
                 variant="destructive"
                 size="lg"
-                className="rounded-full w-16 h-16"
+                className="rounded-full w-16 h-16 shadow-lg"
               >
                 <X className="w-6 h-6" />
               </Button>

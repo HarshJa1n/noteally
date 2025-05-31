@@ -93,7 +93,7 @@ export default function EditorDock({
   return (
     <>
       {/* Dock positioned at the bottom */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
         <Dock className="items-end pb-3">
           {dockItems.map((item, idx) => (
             <DockItem
