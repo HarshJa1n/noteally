@@ -11,6 +11,7 @@ interface TextEditorProps {
   onUpdate?: (content: string) => void
   className?: string
   editable?: boolean
+  fullScreen?: boolean
 }
 
 interface ToolbarButtonProps {
@@ -47,7 +48,8 @@ export default function TextEditor({
   placeholder = 'Start typing...', 
   onUpdate,
   className = '',
-  editable = true 
+  editable = true,
+  fullScreen = false
 }: TextEditorProps) {
   const [savedStatus, setSavedStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
 
@@ -69,6 +71,7 @@ export default function TextEditor({
     ],
     content,
     editable,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (onUpdate) {
         setSavedStatus('saving')
@@ -97,7 +100,7 @@ export default function TextEditor({
   }
 
   return (
-    <div className={`border border-gray-200 rounded-lg overflow-hidden bg-white ${className}`}>
+    <div className={`${fullScreen ? 'h-full flex flex-col' : ''} border border-gray-200 rounded-lg overflow-hidden bg-white ${className}`}>
       {/* Toolbar */}
       {editable && (
         <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50">
@@ -224,7 +227,7 @@ export default function TextEditor({
       )}
 
       {/* Editor Content */}
-      <div className="prose prose-sm max-w-none p-4 min-h-[200px] [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0">
+      <div className={`prose prose-sm max-w-none p-4 ${fullScreen ? 'flex-1 overflow-y-auto' : 'min-h-[200px]'} [&_.ProseMirror]:outline-none [&_.ProseMirror]:h-full [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0`}>
         <EditorContent editor={editor} />
       </div>
 
