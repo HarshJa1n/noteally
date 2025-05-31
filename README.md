@@ -40,11 +40,22 @@ bun install
 ```
 
 3. Set up environment variables:
-Create a `.env` file in the root directory and add your Gemini API key:
+Create a `.env` file in the root directory and add your API keys:
 ```bash
 # Get your API key from: https://aistudio.google.com/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key
+
+# Firebase Configuration (for authentication and Firestore database)
+# Get these from Firebase Console > Project Settings > General
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
+
+**Note**: This app uses Firestore for cloud data storage and Firebase Authentication. Firebase Storage is not used.
 
 4. Run the development server:
 ```bash
@@ -73,7 +84,9 @@ bun dev
 - **UI**: Shadcn UI components with Tailwind CSS
 - **AI/OCR**: Google Gemini API via Genkit
 - **Text Editor**: Tiptap with advanced extensions
-- **Storage**: LocalForage for browser storage
+- **Database**: Firebase Firestore for cloud storage
+- **Authentication**: Firebase Authentication
+- **Local Storage**: LocalForage for browser storage
 - **TypeScript**: Full type safety
 
 ## Project Structure
