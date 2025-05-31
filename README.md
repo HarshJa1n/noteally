@@ -1,107 +1,138 @@
-# Noteally
+# Noteally - AI-Powered Photo Notes
 
-A minimalist, photo-based notepad web application that leverages AI-powered OCR technology to extract text from photos of book sections, enabling users to quickly create searchable and editable notes.
+A minimalist, photo-based notepad that uses AI to extract text from book photos.
 
-## Features
+## 🚀 Quick Start
 
-- 📸 Photo capture and upload for book pages
-- 🤖 AI-powered OCR text extraction using Gemini API
-- ✏️ Rich text editor with formatting options
-- 🏷️ Note organization with tags and categories
-- 🔍 Fast search functionality
-- 💾 Local storage for notes
-- 📱 Mobile-responsive design
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-## Getting Started
+2. **Set up environment variables**
+   Create a `.env.local` file with your Firebase and AI API keys:
+   ```
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   ```
 
-### Prerequisites
+3. **Firebase Setup**
+   
+   **IMPORTANT**: To fix the "ADMIN_ONLY_OPERATION" error, you need to:
+   
+   a. **Enable Anonymous Authentication**:
+   - Go to Firebase Console > Authentication > Sign-in method
+   - Enable "Anonymous" authentication
+   
+   b. **Deploy Firestore Security Rules**:
+   ```bash
+   # Install Firebase CLI if you haven't
+   npm install -g firebase-tools
+   
+   # Login to Firebase
+   firebase login
+   
+   # Initialize Firebase in your project (if not done)
+   firebase init firestore
+   
+   # Deploy the security rules
+   firebase deploy --only firestore:rules
+   ```
+   
+   c. **Verify Security Rules**:
+   The `firestore.rules` file in this project contains the correct rules that allow authenticated users (including anonymous) to access their own data.
 
-- Node.js 18+ 
-- npm, yarn, pnpm, or bun
-- A Google AI Studio API key
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-### Installation
+## 🔧 Troubleshooting
 
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd noteally
-```
+### "ADMIN_ONLY_OPERATION" Error
+This error typically occurs when:
+- Anonymous authentication is not enabled in Firebase Console
+- Firestore security rules are too restrictive
+- Firebase configuration is incorrect
 
-2. Install dependencies:
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
-```
+**Solution**:
+1. Enable Anonymous Auth in Firebase Console
+2. Deploy the included `firestore.rules` file
+3. Check that your environment variables are correct
 
-3. Set up environment variables:
-Create a `.env` file in the root directory and add your API keys:
-```bash
-# Get your API key from: https://aistudio.google.com/apikey
-GEMINI_API_KEY=your_gemini_api_key
+### Camera Not Working
+If the camera preview doesn't show:
+- Check browser permissions for camera access
+- Ensure you're on HTTPS (required for camera API)
+- Check browser console for detailed error messages
 
-# Firebase Configuration (for authentication and Firestore database)
-# Get these from Firebase Console > Project Settings > General
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-```
+### Notes Not Saving
+If notes aren't saving properly:
+- Check the browser console for authentication errors
+- Verify Firebase configuration
+- Ensure Firestore security rules are deployed
 
-**Note**: This app uses Firestore for cloud data storage and Firebase Authentication. Firebase Storage is not used.
+## 🏗️ Architecture
 
-4. Run the development server:
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Usage
-
-1. **Upload Photos**: Navigate to the upload page and drag & drop or select photos of book pages
-2. **OCR Processing**: The app automatically extracts text from uploaded images using AI
-3. **Edit Notes**: Use the rich text editor to refine and format extracted text
-4. **Organize**: Add tags and categories to organize your notes
-5. **Search**: Use the search functionality to quickly find specific notes
-
-## Tech Stack
-
-- **Frontend**: Next.js 15 with App Router
+- **Frontend**: Next.js 14+ with App Router
 - **UI**: Shadcn UI components with Tailwind CSS
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth (Anonymous)
 - **AI/OCR**: Google Gemini API via Genkit
-- **Text Editor**: Tiptap with advanced extensions
-- **Database**: Firebase Firestore for cloud storage
-- **Authentication**: Firebase Authentication
-- **Local Storage**: LocalForage for browser storage
-- **TypeScript**: Full type safety
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-src/
-├── app/                 # Next.js app router pages
-├── components/          # Reusable UI components
-├── hooks/              # Custom React hooks
-├── services/           # Business logic and API services
-├── types/              # TypeScript type definitions
-└── genkit/             # Genkit AI flows
+noteally/
+├── src/
+│   ├── app/              # Next.js app router pages
+│   ├── components/       # React components
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility libraries
+│   ├── services/        # API and Firebase services
+│   └── types/           # TypeScript type definitions
+├── firestore.rules      # Firestore security rules
+├── firebase.json        # Firebase configuration
+└── firestore.indexes.json # Firestore indexes
 ```
 
-## Contributing
+## 🔐 Security
+
+This application uses Firebase Anonymous Authentication for quick setup while maintaining data isolation between users. Each user can only access their own notes through Firestore security rules.
+
+## 🚀 Deployment
+
+1. **Build the application**
+   ```bash
+   npm run build
+   ```
+
+2. **Deploy to Vercel** (recommended)
+   ```bash
+   npx vercel --prod
+   ```
+
+3. **Deploy Firebase rules** (if changed)
+   ```bash
+   firebase deploy --only firestore:rules,firestore:indexes
+   ```
+
+## 📝 Features
+
+- 📷 **Camera Capture**: Real-time photo capture with webcam
+- 🔍 **OCR Text Extraction**: AI-powered text extraction from images
+- ✏️ **Rich Text Editor**: Full-featured editor with formatting options
+- 🏗️ **Dock Interface**: Clean, Apple-style dock for tools and navigation
+- 💾 **Auto-Save**: Automatic note saving with real-time sync
+- 🔍 **Search**: Fast search across all notes
+- 🏷️ **Organization**: Tags and categories for note organization
+- 📱 **Responsive**: Works on desktop, tablet, and mobile
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -109,22 +140,6 @@ src/
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License.
-
-## Learn More
-
-To learn more about the technologies used:
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Shadcn UI](https://ui.shadcn.com/)
-- [Google AI Studio](https://aistudio.google.com/)
-- [Tiptap Editor](https://tiptap.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT License - see LICENSE file for details.

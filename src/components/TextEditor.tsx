@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 
 interface TextEditorProps {
   content?: string
@@ -12,6 +12,7 @@ interface TextEditorProps {
   className?: string
   editable?: boolean
   fullScreen?: boolean
+  savedStatus?: 'saved' | 'saving' | 'unsaved' | 'error'
 }
 
 interface ToolbarButtonProps {
@@ -49,10 +50,9 @@ export default function TextEditor({
   onUpdate,
   className = '',
   editable = true,
-  fullScreen = false
+  fullScreen = false,
+  savedStatus = 'saved'
 }: TextEditorProps) {
-  const [savedStatus, setSavedStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -74,13 +74,7 @@ export default function TextEditor({
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (onUpdate) {
-        setSavedStatus('saving')
         onUpdate(editor.getHTML())
-        
-        // Simulate auto-save delay
-        setTimeout(() => {
-          setSavedStatus('saved')
-        }, 1000)
       }
     },
   })
