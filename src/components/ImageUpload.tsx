@@ -2,9 +2,12 @@
 
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { runFlow } from '@genkit-ai/next/client'
+import { ocrFlow } from '@/genkit/ocrFlow'
 
 interface ImageUploadProps {
   onImageSelect?: (file: File) => void
+  onTextExtracted?: (text: string, confidence?: number) => void
   className?: string
 }
 
@@ -12,11 +15,67 @@ interface UploadedFile {
   file: File
   preview: string
   id: string
+  extractedText?: string
+  isProcessing?: boolean
+  confidence?: number
 }
 
-export default function ImageUpload({ onImageSelect, className = '' }: ImageUploadProps) {
+export default function ImageUpload({ onImageSelect, onTextExtracted, className = '' }: ImageUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [error, setError] = useState<string>('')
+
+  const processImageOCR = async (file: File, fileId: string) => {
+    try {
+      // Update file status to processing
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { ...f, isProcessing: true } : f)
+      )
+
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          const base64String = result.split(',')[1] // Remove data:image/jpeg;base64, prefix
+          resolve(base64String)
+        }
+        reader.readAsDataURL(file)
+      })
+
+      // Call the OCR flow
+      const result = await runFlow<typeof ocrFlow>({
+        url: '/api/ocr',
+        input: { 
+          imageData: base64,
+          prompt: 'This is a book page. Please extract all text accurately, maintaining structure and formatting.' 
+        },
+      })
+
+      // Update file with extracted text
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { 
+          ...f, 
+          extractedText: result.extractedText,
+          confidence: result.confidence,
+          isProcessing: false 
+        } : f)
+      )
+
+      // Call the callback if provided
+      if (onTextExtracted) {
+        onTextExtracted(result.extractedText, result.confidence)
+      }
+
+    } catch (error) {
+      console.error('OCR processing failed:', error)
+      setError('Failed to extract text from image. Please try again.')
+      
+      // Update file status to show error
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === fileId ? { ...f, isProcessing: false } : f)
+      )
+    }
+  }
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
     // Clear any previous errors
@@ -42,7 +101,8 @@ export default function ImageUpload({ onImageSelect, className = '' }: ImageUplo
         const newFile: UploadedFile = {
           file,
           preview: reader.result as string,
-          id: Math.random().toString(36).substr(2, 9)
+          id: Math.random().toString(36).substr(2, 9),
+          isProcessing: false
         }
         
         setUploadedFiles(prev => [...prev, newFile])
@@ -51,10 +111,13 @@ export default function ImageUpload({ onImageSelect, className = '' }: ImageUplo
         if (onImageSelect) {
           onImageSelect(file)
         }
+
+        // Automatically start OCR processing
+        processImageOCR(file, newFile.id)
       }
       reader.readAsDataURL(file)
     })
-  }, [onImageSelect])
+  }, [onImageSelect, onTextExtracted])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -118,6 +181,9 @@ export default function ImageUpload({ onImageSelect, className = '' }: ImageUplo
               <p className="text-sm text-gray-500">
                 JPEG or PNG files only • Max 5MB per file
               </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Text will be automatically extracted using AI
+              </p>
             </div>
           )}
         </div>
@@ -136,32 +202,68 @@ export default function ImageUpload({ onImageSelect, className = '' }: ImageUplo
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Uploaded Images ({uploadedFiles.length})
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-6">
             {uploadedFiles.map((uploadedFile) => (
               <div
                 key={uploadedFile.id}
-                className="relative bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+                className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
               >
-                <div className="aspect-video relative">
-                  <img
-                    src={uploadedFile.preview}
-                    alt={uploadedFile.file.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    onClick={() => removeFile(uploadedFile.id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {uploadedFile.file.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {formatFileSize(uploadedFile.file.size)}
-                  </p>
+                <div className="grid md:grid-cols-2 gap-4 p-4">
+                  {/* Image Preview */}
+                  <div className="relative">
+                    <div className="aspect-video relative">
+                      <img
+                        src={uploadedFile.preview}
+                        alt={uploadedFile.file.name}
+                        className="w-full h-full object-cover rounded"
+                      />
+                      <button
+                        onClick={() => removeFile(uploadedFile.id)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {uploadedFile.file.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatFileSize(uploadedFile.file.size)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Extracted Text */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-gray-900">Extracted Text</h4>
+                      {uploadedFile.confidence && (
+                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                          {Math.round(uploadedFile.confidence * 100)}% confidence
+                        </span>
+                      )}
+                    </div>
+                    
+                    {uploadedFile.isProcessing ? (
+                      <div className="flex items-center space-x-2 text-blue-600">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                        <span className="text-sm">Processing with AI...</span>
+                      </div>
+                    ) : uploadedFile.extractedText ? (
+                      <div className="bg-gray-50 p-3 rounded border max-h-48 overflow-y-auto">
+                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                          {uploadedFile.extractedText}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-50 p-3 rounded border">
+                        <p className="text-sm text-yellow-800">
+                          No text extracted. The image might not contain readable text.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
