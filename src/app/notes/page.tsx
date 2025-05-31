@@ -7,32 +7,17 @@ import { Note } from '@/types/note'
 import Link from 'next/link'
 import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
-export default function NotesPage() {
-  const { user, isAuthenticated, signInAnonymously, loading: authLoading } = useAuth()
+function NotesContent() {
+  const { user, isAuthenticated } = useAuth()
   const [notes, setNotes] = useState<Note[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [authError, setAuthError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [retryCount, setRetryCount] = useState(0)
 
-  // Initialize user session if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      signInAnonymously()
-        .then(() => {
-          setAuthError(null)
-          setRetryCount(0)
-        })
-        .catch((err) => {
-          console.error('Anonymous sign in failed:', err)
-          setAuthError(`Authentication failed: ${err.message}`)
-        })
-    }
-  }, [authLoading, isAuthenticated, signInAnonymously])
-
-  // Fetch notes when user is available
+  // Fetch notes when user is available and authenticated
   useEffect(() => {
     if (user?.uid && isAuthenticated) {
       fetchNotes()
@@ -65,7 +50,6 @@ export default function NotesPage() {
         setError('Permission denied. Your account may not have proper access rights.')
       } else if (errorMessage.includes('unauthenticated')) {
         setError('Authentication expired. Please refresh the page.')
-        setAuthError('Authentication expired')
       } else {
         setError(errorMessage)
       }
@@ -76,78 +60,12 @@ export default function NotesPage() {
     }
   }
 
-  const handleRetryAuth = async () => {
-    setAuthError(null)
-    setError(null)
-    try {
-      await signInAnonymously()
-    } catch (err) {
-      console.error('Retry authentication failed:', err)
-      setAuthError(err instanceof Error ? err.message : 'Authentication failed')
-    }
-  }
-
   const filteredNotes = notes.filter(note => 
     searchTerm === '' || 
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  // Loading state
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">Initializing your session...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Authentication error state
-  if (authError && !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-6 max-w-md mx-auto p-6">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-gray-900">Authentication Issue</h1>
-            <p className="text-gray-600">
-              We're having trouble setting up your session. This might be due to Firebase configuration.
-            </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-              {authError}
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <Button onClick={handleRetryAuth} className="w-full">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry Authentication
-            </Button>
-            
-            <Link href="/editor" className="block">
-              <Button variant="outline" className="w-full">
-                <FileText className="h-4 w-4 mr-2" />
-                Use Editor Without Saving
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="text-xs text-gray-500 space-y-1">
-            <p>If this persists, check that:</p>
-            <ul className="list-disc list-inside text-left space-y-1">
-              <li>Anonymous authentication is enabled in Firebase</li>
-              <li>Firestore security rules allow authenticated access</li>
-              <li>Firebase configuration is correct</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -316,5 +234,13 @@ export default function NotesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function NotesPage() {
+  return (
+    <ProtectedRoute allowAnonymous={true} redirectTo="/auth">
+      <NotesContent />
+    </ProtectedRoute>
   )
 } 
