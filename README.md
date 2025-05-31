@@ -1,9 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Noteally
+
+A minimalist, photo-based notepad web application that leverages AI-powered OCR technology to extract text from photos of book sections, enabling users to quickly create searchable and editable notes.
+
+## Features
+
+- 📸 Photo capture and upload for book pages
+- 🤖 AI-powered OCR text extraction using Gemini API
+- ✏️ Rich text editor with formatting options
+- 🏷️ Note organization with tags and categories
+- 🔍 Fast search functionality
+- 💾 Local storage for notes
+- 📱 Mobile-responsive design
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+- A Google AI Studio API key
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd noteally
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+# or
+bun install
+```
+
+3. Set up environment variables:
+Create a `.env` file in the root directory and add your Gemini API key:
+```bash
+# Get your API key from: https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+4. Run the development server:
 ```bash
 npm run dev
 # or
@@ -14,20 +57,58 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Upload Photos**: Navigate to the upload page and drag & drop or select photos of book pages
+2. **OCR Processing**: The app automatically extracts text from uploaded images using AI
+3. **Edit Notes**: Use the rich text editor to refine and format extracted text
+4. **Organize**: Add tags and categories to organize your notes
+5. **Search**: Use the search functionality to quickly find specific notes
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 with App Router
+- **UI**: Shadcn UI components with Tailwind CSS
+- **AI/OCR**: Google Gemini API via Genkit
+- **Text Editor**: Tiptap with advanced extensions
+- **Storage**: LocalForage for browser storage
+- **TypeScript**: Full type safety
+
+## Project Structure
+
+```
+src/
+├── app/                 # Next.js app router pages
+├── components/          # Reusable UI components
+├── hooks/              # Custom React hooks
+├── services/           # Business logic and API services
+├── types/              # TypeScript type definitions
+└── genkit/             # Genkit AI flows
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about the technologies used:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Google AI Studio](https://aistudio.google.com/)
+- [Tiptap Editor](https://tiptap.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
 
 ## Deploy on Vercel
 

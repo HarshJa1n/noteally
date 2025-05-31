@@ -1,8 +1,18 @@
 'use client'
 
+import { useCallback } from 'react'
 import ImageUpload from '@/components/ImageUpload'
 
 export default function UploadPage() {
+  const handleImageSelect = useCallback((file: File) => {
+    console.log('Selected file:', file.name)
+  }, [])
+
+  const handleTextExtracted = useCallback((text: string, confidence?: number) => {
+    console.log('Extracted text:', text)
+    console.log('Confidence:', confidence)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,9 +27,8 @@ export default function UploadPage() {
 
         <div className="bg-white rounded-lg shadow-sm p-6">
           <ImageUpload 
-            onImageSelect={(file) => {
-              console.log('Selected file:', file.name)
-            }}
+            onImageSelect={handleImageSelect}
+            onTextExtracted={handleTextExtracted}
           />
         </div>
 
