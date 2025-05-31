@@ -147,18 +147,19 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+          border-2 border-dashed rounded-lg p-4 sm:p-6 lg:p-8 text-center cursor-pointer transition-colors
           ${isDragActive 
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 hover:border-gray-400'
           }
           ${error ? 'border-red-300 bg-red-50' : ''}
+          touch-manipulation
         `}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-3 sm:space-y-4">
           <svg
-            className={`w-12 h-12 ${isDragActive ? 'text-blue-500' : 'text-gray-400'}`}
+            className={`w-10 h-10 sm:w-12 sm:h-12 ${isDragActive ? 'text-blue-500' : 'text-gray-400'}`}
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -172,16 +173,16 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
           </svg>
           
           {isDragActive ? (
-            <p className="text-blue-600 font-medium">Drop the images here...</p>
+            <p className="text-blue-600 font-medium text-sm sm:text-base">Drop the images here...</p>
           ) : (
-            <div>
-              <p className="text-gray-600 mb-2">
-                <span className="font-medium">Click to upload</span> or drag and drop
+            <div className="space-y-2">
+              <p className="text-gray-600 text-sm sm:text-base">
+                <span className="font-medium">Tap to upload</span> or drag and drop
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs sm:text-sm text-gray-500">
                 JPEG or PNG files only • Max 5MB per file
               </p>
-              <p className="text-xs text-blue-600 mt-1">
+              <p className="text-xs text-blue-600">
                 Text will be automatically extracted using AI
               </p>
             </div>
@@ -191,24 +192,24 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
 
       {/* Error Message */}
       {error && (
-        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
           {error}
         </div>
       )}
 
       {/* Uploaded Files Preview */}
       {uploadedFiles.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className="mt-4 sm:mt-6">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
             Uploaded Images ({uploadedFiles.length})
           </h3>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {uploadedFiles.map((uploadedFile) => (
               <div
                 key={uploadedFile.id}
                 className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
               >
-                <div className="grid md:grid-cols-2 gap-4 p-4">
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 p-3 sm:p-4">
                   {/* Image Preview */}
                   <div className="relative">
                     <div className="aspect-video relative">
@@ -219,7 +220,8 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
                       />
                       <button
                         onClick={() => removeFile(uploadedFile.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 sm:w-6 sm:h-6 flex items-center justify-center hover:bg-red-600 transition-colors touch-manipulation"
+                        aria-label="Remove image"
                       >
                         ×
                       </button>
@@ -251,8 +253,8 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
                         <span className="text-sm">Processing with AI...</span>
                       </div>
                     ) : uploadedFile.extractedText ? (
-                      <div className="bg-gray-50 p-3 rounded border max-h-48 overflow-y-auto">
-                        <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                      <div className="bg-gray-50 p-3 rounded border max-h-40 sm:max-h-48 overflow-y-auto">
+                        <pre className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap font-mono">
                           {uploadedFile.extractedText}
                         </pre>
                       </div>
