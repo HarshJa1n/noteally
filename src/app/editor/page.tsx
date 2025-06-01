@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useNote } from '@/hooks/useNote'
 import TextEditor from '@/components/TextEditor'
 import EditorDock from '@/components/EditorDock'
 
-export default function EditorPage() {
+function EditorContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
@@ -165,5 +165,25 @@ export default function EditorPage() {
         extractedText={extractedText}
       />
     </div>
+  )
+}
+
+// Loading fallback component
+function EditorLoading() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-600">Loading editor...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function EditorPage() {
+  return (
+    <Suspense fallback={<EditorLoading />}>
+      <EditorContent />
+    </Suspense>
   )
 } 
