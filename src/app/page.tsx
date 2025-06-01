@@ -15,7 +15,7 @@ export default function Home() {
         </div>
 
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 max-w-7xl mx-auto mb-12 sm:mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-7xl mx-auto mb-12 sm:mb-16">
           <Link href="/upload" className="group">
             <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-4 sm:p-6 text-center touch-manipulation">
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-indigo-200 transition-colors">
@@ -47,31 +47,7 @@ export default function Home() {
               </div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Notes</h3>
               <p className="text-xs sm:text-sm text-gray-600">
-                Browse and manage your digital notes
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/tags" className="group">
-            <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-4 sm:p-6 text-center touch-manipulation">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-purple-200 transition-colors">
-                <span className="text-xl sm:text-2xl">🏷️</span>
-              </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Tags</h3>
-              <p className="text-xs sm:text-sm text-gray-600">
-                Organize notes with tags and labels
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/categories" className="group">
-            <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 p-4 sm:p-6 text-center touch-manipulation">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-orange-200 transition-colors">
-                <span className="text-xl sm:text-2xl">📚</span>
-              </div>
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Categories</h3>
-              <p className="text-xs sm:text-sm text-gray-600">
-                Browse notes by subject categories
+                Browse and manage your digital notes with filtering by tags and categories
               </p>
             </div>
           </Link>

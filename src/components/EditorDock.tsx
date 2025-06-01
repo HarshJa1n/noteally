@@ -6,16 +6,10 @@ import {
   Camera, 
   Home, 
   FileText, 
-  Tags, 
-  FolderOpen,
-  Image as ImageIcon,
-  Check
+  Image as ImageIcon
 } from 'lucide-react'
 import { Dock, DockIcon, DockItem, DockLabel } from '@/components/ui/dock'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
 import ImageUpload from '@/components/ImageUpload'
 import CameraComponent from '@/components/ui/camera/camera'
 import { runFlow } from '@genkit-ai/next/client'
@@ -149,16 +143,6 @@ export default function EditorDock({
       title: 'Camera',
       icon: <Camera className="h-full w-full text-neutral-600 dark:text-neutral-300" />,
       action: () => setIsCameraOpen(true),
-    },
-    {
-      title: 'Tags',
-      icon: <Tags className="h-full w-full text-neutral-600 dark:text-neutral-300" />,
-      href: '/tags',
-    },
-    {
-      title: 'Categories',
-      icon: <FolderOpen className="h-full w-full text-neutral-600 dark:text-neutral-300" />,
-      href: '/categories',
     },
   ]
 

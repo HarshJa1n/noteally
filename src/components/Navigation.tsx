@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Upload, FileText, Tag, Folder, Edit, Home, User, LogOut } from 'lucide-react'
+import { Menu, X, Upload, FileText, Edit, User, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function Navigation() {
@@ -12,14 +12,21 @@ export default function Navigation() {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
 
-  const navigation = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Upload', href: '/upload', icon: Upload },
-    { name: 'Editor', href: '/editor', icon: Edit },
-    { name: 'Notes', href: '/notes', icon: FileText },
-    { name: 'Tags', href: '/tags', icon: Tag },
-    { name: 'Categories', href: '/categories', icon: Folder },
-  ]
+  // Different navigation items based on auth state
+  const getNavigation = () => {
+    if (user) {
+      // Signed-in users: show notes, editor, upload
+      return [
+        { name: 'Notes', href: '/notes', icon: FileText },
+        { name: 'Editor', href: '/editor', icon: Edit },
+        { name: 'Upload', href: '/upload', icon: Upload },
+      ]
+    }
+    // Signed-out users: no navigation items, just the sign-in button
+    return []
+  }
+
+  const navigation = getNavigation()
 
   const isActive = (href: string) => {
     if (href === '/') {
@@ -95,26 +102,28 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-600 hover:text-gray-900"
-            >
-              {isOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
+          {/* Mobile menu button - only show if there are nav items or user is signed in */}
+          {(navigation.length > 0 || user) && (
+            <div className="md:hidden flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                {isOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      {isOpen && (
+      {isOpen && (navigation.length > 0 || user) && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t">
             {navigation.map((item) => {

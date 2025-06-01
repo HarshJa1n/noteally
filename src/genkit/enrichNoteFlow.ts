@@ -29,7 +29,7 @@ export const enrichNoteFlow = ai.defineFlow(
     const startTime = Date.now();
     
     // Truncate content to 2000 characters to manage API costs and context
-    const truncatedContent = content.length > 2000 ? content.substring(0, 2000) + '...' : content;
+    const truncatedContent = content.length > 4000 ? content.substring(0, 2000) + '...' : content;
     
     const enrichmentPrompt = `Analyze the following note content and provide improved metadata:
 
