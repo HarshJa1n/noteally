@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Mail, Lock, User, Chrome } from 'lucide-react'
@@ -12,11 +12,10 @@ import { useAuth } from '@/hooks/useAuth'
 
 interface AuthFormProps {
   onSuccess?: () => void
-  showAnonymous?: boolean
 }
 
-export default function AuthForm({ onSuccess, showAnonymous = true }: AuthFormProps) {
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInAnonymously, loading, error, clearError } = useAuth()
+export default function AuthForm({ onSuccess }: AuthFormProps) {
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle, loading, error, clearError } = useAuth()
   
   const [formData, setFormData] = useState({
     email: '',
@@ -84,15 +83,6 @@ export default function AuthForm({ onSuccess, showAnonymous = true }: AuthFormPr
   const handleGoogleAuth = async () => {
     try {
       await signInWithGoogle()
-      onSuccess?.()
-    } catch (err) {
-      // Error is handled by useAuth hook
-    }
-  }
-
-  const handleAnonymousAuth = async () => {
-    try {
-      await signInAnonymously()
       onSuccess?.()
     } catch (err) {
       // Error is handled by useAuth hook
@@ -261,28 +251,15 @@ export default function AuthForm({ onSuccess, showAnonymous = true }: AuthFormPr
           </div>
         </div>
         
-        <div className="space-y-3">
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleGoogleAuth}
-            disabled={loading}
-          >
-            <Chrome className="mr-2 h-4 w-4" />
-            Google
-          </Button>
-          
-          {showAnonymous && (
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleAnonymousAuth}
-              disabled={loading}
-            >
-              Continue as Guest
-            </Button>
-          )}
-        </div>
+        <Button 
+          variant="outline" 
+          className="w-full" 
+          onClick={handleGoogleAuth}
+          disabled={loading}
+        >
+          <Chrome className="mr-2 h-4 w-4" />
+          Google
+        </Button>
       </CardContent>
     </Card>
   )
