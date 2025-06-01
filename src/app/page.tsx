@@ -1,51 +1,95 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { motion } from "framer-motion"
-import { AuroraBackground } from "@/components/ui/aurora-background"
+import dynamic from 'next/dynamic'
 import { Button } from "@/components/ui/button"
 import { Camera, BookOpen, Search, Zap, Users, FileText, Brain, Shield } from 'lucide-react'
 import Link from "next/link"
 
+// Dynamically import Aurora Background to avoid SSR issues
+const AuroraBackground = dynamic(
+  () => import('@/components/ui/aurora-background').then((mod) => ({ default: mod.AuroraBackground })),
+  { ssr: false }
+)
+
 function HomeContent() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <>
       {/* Hero Section with Aurora Background */}
-      <AuroraBackground>
-        <motion.div
-          initial={{ opacity: 0.0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{
-            delay: 0.3,
-            duration: 0.8,
-            ease: "easeInOut",
-          }}
-          className="relative flex flex-col gap-4 items-center justify-center px-4 text-center"
-        >
-          <div className="text-4xl md:text-7xl font-bold dark:text-white text-center">
-            Transform Books into
-            <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
-              {" "}Digital Notes
-            </span>
+      <div className="relative">
+        {mounted && (
+          <AuroraBackground>
+            <motion.div
+              initial={{ opacity: 0.0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.3,
+                duration: 0.8,
+                ease: "easeInOut",
+              }}
+              className="relative flex flex-col gap-4 items-center justify-center px-4 text-center"
+            >
+              <div className="text-4xl md:text-7xl font-bold dark:text-white text-center">
+                Transform Books into
+                <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                  {" "}Digital Notes
+                </span>
+              </div>
+              <div className="font-light text-lg md:text-2xl dark:text-neutral-200 py-4 max-w-3xl">
+                AI-powered OCR technology that converts your book photos into searchable, 
+                editable notes. Perfect for students, researchers, and avid readers.
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                <Link href="/auth">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-2">
+                  Watch Demo
+                </Button>
+              </div>
+            </motion.div>
+          </AuroraBackground>
+        )}
+        
+        {/* Fallback for SSR */}
+        {!mounted && (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+            <div className="relative flex flex-col gap-4 items-center justify-center px-4 text-center">
+              <div className="text-4xl md:text-7xl font-bold text-gray-900 text-center">
+                Transform Books into
+                <span className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                  {" "}Digital Notes
+                </span>
+              </div>
+              <div className="font-light text-lg md:text-2xl text-gray-600 py-4 max-w-3xl">
+                AI-powered OCR technology that converts your book photos into searchable, 
+                editable notes. Perfect for students, researchers, and avid readers.
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                <Link href="/auth">
+                  <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
+                    Get Started Free
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-2">
+                  Watch Demo
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="font-light text-lg md:text-2xl dark:text-neutral-200 py-4 max-w-3xl">
-            AI-powered OCR technology that converts your book photos into searchable, 
-            editable notes. Perfect for students, researchers, and avid readers.
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <Link href="/auth">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
-                Get Started Free
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg" className="px-8 py-3 text-lg border-2">
-              Watch Demo
-            </Button>
-          </div>
-        </motion.div>
-      </AuroraBackground>
+        )}
+      </div>
 
       {/* Use Cases Section */}
       <div className="py-16 bg-gray-50">
@@ -299,8 +343,10 @@ function HomeContent() {
 export default function Home() {
   const router = useRouter()
   const { user, loading } = useAuth()
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    setIsClient(true)
     // Redirect authenticated users to /notes
     if (user && !loading) {
       router.push('/notes')
@@ -308,7 +354,7 @@ export default function Home() {
   }, [user, loading, router])
 
   // Show loading while checking authentication
-  if (loading) {
+  if (loading || !isClient) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
