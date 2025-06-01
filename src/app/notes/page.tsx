@@ -6,7 +6,7 @@ import { useNoteEnrichment } from '@/hooks/useNoteEnrichment'
 import { FirestoreService } from '@/services/firestoreService'
 import { Note } from '@/types/note'
 import Link from 'next/link'
-import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw, Sparkles, Edit3 } from 'lucide-react'
+import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw, Sparkles, Edit3, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import NoteEnrichmentDialog from '@/components/NoteEnrichmentDialog'
@@ -23,6 +23,7 @@ function NotesContent() {
   const [selectedNoteForEnrichment, setSelectedNoteForEnrichment] = useState<Note | null>(null)
   const [isEnrichmentDialogOpen, setIsEnrichmentDialogOpen] = useState(false)
   const [isApplyingEnrichment, setIsApplyingEnrichment] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
   const router = useRouter()
 
   // Fetch notes when user is available and authenticated
@@ -106,6 +107,32 @@ function NotesContent() {
       setError(err instanceof Error ? err.message : 'Failed to apply enrichment')
     } finally {
       setIsApplyingEnrichment(false)
+    }
+  }
+
+  const handleDeleteNote = async (note: Note) => {
+    if (!user?.uid) return
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${note.title}"? This action cannot be undone.`
+    )
+
+    if (!confirmDelete) return
+
+    setDeletingNoteId(note.id)
+    try {
+      await FirestoreService.deleteNote(note.id, user.uid)
+      
+      // Remove the note from local state
+      setNotes(prevNotes => prevNotes.filter(n => n.id !== note.id))
+      
+      // Clear any error states
+      setError(null)
+    } catch (err) {
+      console.error('Error deleting note:', err)
+      setError(err instanceof Error ? err.message : 'Failed to delete note')
+    } finally {
+      setDeletingNoteId(null)
     }
   }
 
@@ -321,6 +348,26 @@ function NotesContent() {
                         <Sparkles className="h-3 w-3" />
                         Enrich
                       </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleDeleteNote(note)
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    disabled={deletingNoteId === note.id}
+                  >
+                    {deletingNoteId === note.id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-red-600"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      <Trash2 className="h-3 w-3" />
                     )}
                   </Button>
                 </div>
