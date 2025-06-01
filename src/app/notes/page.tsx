@@ -6,10 +6,11 @@ import { useNoteEnrichment } from '@/hooks/useNoteEnrichment'
 import { FirestoreService } from '@/services/firestoreService'
 import { Note } from '@/types/note'
 import Link from 'next/link'
-import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw, Sparkles } from 'lucide-react'
+import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw, Sparkles, Edit3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import NoteEnrichmentDialog from '@/components/NoteEnrichmentDialog'
+import { useRouter } from 'next/navigation'
 
 function NotesContent() {
   const { user, isAuthenticated } = useAuth()
@@ -22,6 +23,7 @@ function NotesContent() {
   const [selectedNoteForEnrichment, setSelectedNoteForEnrichment] = useState<Note | null>(null)
   const [isEnrichmentDialogOpen, setIsEnrichmentDialogOpen] = useState(false)
   const [isApplyingEnrichment, setIsApplyingEnrichment] = useState(false)
+  const router = useRouter()
 
   // Fetch notes when user is available and authenticated
   useEffect(() => {
@@ -257,7 +259,7 @@ function NotesContent() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredNotes.map((note) => (
               <div key={note.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                <Link href={`/editor?id=${note.id}`}>
+                <Link href={`/notes/${note.id}`}>
                   <div className="cursor-pointer">
                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                       {note.title}
@@ -284,29 +286,44 @@ function NotesContent() {
                   )}
                 </div>
 
-                {/* Enrich Note Button */}
-                <Button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleEnrichNote(note)
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full flex items-center gap-2"
-                  disabled={isEnriching && selectedNoteForEnrichment?.id === note.id}
-                >
-                  {isEnriching && selectedNoteForEnrichment?.id === note.id ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-600"></div>
-                      Enriching...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-3 w-3" />
-                      Enrich Note Details
-                    </>
-                  )}
-                </Button>
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      router.push(`/editor?id=${note.id}`)
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 flex items-center gap-2"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    Edit
+                  </Button>
+
+                  <Button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleEnrichNote(note)
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 flex items-center gap-2"
+                    disabled={isEnriching && selectedNoteForEnrichment?.id === note.id}
+                  >
+                    {isEnriching && selectedNoteForEnrichment?.id === note.id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-600"></div>
+                        Enriching...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3 w-3" />
+                        Enrich
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
