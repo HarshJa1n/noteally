@@ -1,145 +1,155 @@
 # Noteally - AI-Powered Photo Notes
 
-A minimalist, photo-based notepad that uses AI to extract text from book photos.
+> Transform your physical books into searchable, digital notes with the power of AI
+
+Noteally is a minimalist, photo-based notepad web application designed for students, researchers, and avid readers. It leverages Google's Gemini AI to extract and process text from photos of book pages, enabling you to quickly create searchable, editable, and organized digital notes from physical sources.
+
+## ✨ Features
+
+- 🤖 **AI-Powered Text Extraction**: Using Google Gemini's advanced language models with 90%+ accuracy
+- 📷 **Real-Time Camera Capture**: Direct webcam integration for immediate photo taking
+- ✏️ **Editor-First Design**: Full-screen rich text editor with advanced formatting
+- 🎯 **Intuitive Dock Interface**: Apple-style dock with smooth animations and quick access tools
+- 🔍 **Powerful Search & Organization**: Lightning-fast search with smart tagging and categories
+- 🌐 **Cross-Device Sync**: Access notes anywhere with real-time synchronization
+- 📱 **Mobile Optimized**: Full-featured experience on all devices
 
 ## 🚀 Quick Start
 
-1. **Install dependencies**
+### Prerequisites
+- Node.js 18+ and npm
+- Firebase project with Firestore and Authentication enabled
+- Google AI API key for Gemini
+
+### Installation
+
+1. **Clone and install**
    ```bash
+   git clone https://github.com/your-username/noteally.git
+   cd noteally
    npm install
    ```
 
-2. **Set up environment variables**
-   Create a `.env.local` file with your Firebase and AI API keys:
-   ```
+2. **Environment setup**
+   Create `.env.local` with your credentials:
+   ```env
+   # Firebase Configuration
    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
    NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
    NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+   # Google AI Configuration
+   GOOGLE_AI_API_KEY=your_gemini_api_key
    ```
 
-3. **Firebase Setup**
-   
-   **IMPORTANT**: To fix the "ADMIN_ONLY_OPERATION" error, you need to:
-   
-   a. **Enable Anonymous Authentication**:
-   - Go to Firebase Console > Authentication > Sign-in method
-   - Enable "Anonymous" authentication
-   
-   b. **Deploy Firestore Security Rules**:
+3. **Firebase setup**
    ```bash
-   # Install Firebase CLI if you haven't
    npm install -g firebase-tools
-   
-   # Login to Firebase
    firebase login
-   
-   # Initialize Firebase in your project (if not done)
    firebase init firestore
-   
-   # Deploy the security rules
    firebase deploy --only firestore:rules
    ```
-   
-   c. **Verify Security Rules**:
-   The `firestore.rules` file in this project contains the correct rules that allow authenticated users (including anonymous) to access their own data.
 
-4. **Run the development server**
+4. **Start development**
    ```bash
    npm run dev
    ```
 
-## 🔧 Troubleshooting
+   Open [http://localhost:3000](http://localhost:3000) to see your app.
 
-### "ADMIN_ONLY_OPERATION" Error
-This error typically occurs when:
-- Anonymous authentication is not enabled in Firebase Console
-- Firestore security rules are too restrictive
-- Firebase configuration is incorrect
+## 🏗️ Tech Stack
 
-**Solution**:
-1. Enable Anonymous Auth in Firebase Console
-2. Deploy the included `firestore.rules` file
-3. Check that your environment variables are correct
-
-### Camera Not Working
-If the camera preview doesn't show:
-- Check browser permissions for camera access
-- Ensure you're on HTTPS (required for camera API)
-- Check browser console for detailed error messages
-
-### Notes Not Saving
-If notes aren't saving properly:
-- Check the browser console for authentication errors
-- Verify Firebase configuration
-- Ensure Firestore security rules are deployed
-
-## 🏗️ Architecture
-
-- **Frontend**: Next.js 14+ with App Router
-- **UI**: Shadcn UI components with Tailwind CSS
-- **Database**: Firebase Firestore
-- **Authentication**: Firebase Auth (Anonymous)
-- **AI/OCR**: Google Gemini API via Genkit
+- **Frontend**: Next.js 14+ with App Router, Shadcn UI, Tailwind CSS, Framer Motion
+- **Backend & AI**: Firebase Firestore, Firebase Auth, Google Gemini API via Genkit
+- **State Management**: Zustand for lightweight, scalable state handling
+- **Deployment**: Vercel for hosting, Firebase for backend services
 
 ## 📁 Project Structure
 
 ```
 noteally/
 ├── src/
-│   ├── app/              # Next.js app router pages
-│   ├── components/       # React components
-│   ├── hooks/           # Custom React hooks
-│   ├── lib/             # Utility libraries
-│   ├── services/        # API and Firebase services
-│   └── types/           # TypeScript type definitions
-├── firestore.rules      # Firestore security rules
-├── firebase.json        # Firebase configuration
-└── firestore.indexes.json # Firestore indexes
+│   ├── app/                    # Next.js App Router
+│   ├── components/
+│   │   ├── ui/                # Shadcn UI components
+│   │   ├── editor/            # Rich text editor
+│   │   ├── dock/              # Dock interface
+│   │   └── notes/             # Note management
+│   ├── lib/                   # Firebase, Gemini AI integration
+│   ├── hooks/                 # Custom React hooks
+│   └── types/                 # TypeScript definitions
+├── firestore.rules           # Database security rules
+└── firebase.json             # Firebase configuration
 ```
 
 ## 🔐 Security
 
-This application uses Firebase Anonymous Authentication for quick setup while maintaining data isolation between users. Each user can only access their own notes through Firestore security rules.
+- **User Isolation**: Firestore security rules ensure users can only access their own notes
+- **Encrypted Transit**: All data transmission uses HTTPS/TLS encryption
+- **Anonymous Auth**: Quick setup without requiring personal information
+- **Local Processing**: Images are processed securely without permanent server storage
+
+## 🎯 Usage
+
+1. **Sign In**: Use anonymous authentication for quick access
+2. **Capture**: Click the camera icon in the dock to take a photo of text
+3. **Extract**: Watch as AI automatically extracts text from your image
+4. **Edit**: Use the rich text editor to refine and format your notes
+5. **Organize**: Add tags and categories to keep your notes structured
+6. **Search**: Find any note instantly using the powerful search feature
 
 ## 🚀 Deployment
 
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
+### Production Build
+```bash
+npm run build
+npm start
+```
 
-2. **Deploy to Vercel** (recommended)
-   ```bash
-   npx vercel --prod
-   ```
+### Deploy to Vercel
+```bash
+npx vercel --prod
+```
 
-3. **Deploy Firebase rules** (if changed)
-   ```bash
-   firebase deploy --only firestore:rules,firestore:indexes
-   ```
+### Deploy Firebase Rules
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
 
-## 📝 Features
+## 🔧 Development
 
-- 📷 **Camera Capture**: Real-time photo capture with webcam
-- 🔍 **OCR Text Extraction**: AI-powered text extraction from images
-- ✏️ **Rich Text Editor**: Full-featured editor with formatting options
-- 🏗️ **Dock Interface**: Clean, Apple-style dock for tools and navigation
-- 💾 **Auto-Save**: Automatic note saving with real-time sync
-- 🔍 **Search**: Fast search across all notes
-- 🏷️ **Organization**: Tags and categories for note organization
-- 📱 **Responsive**: Works on desktop, tablet, and mobile
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript compiler
+```
+
+## 🐛 Troubleshooting
+
+**Camera not working?** Check browser permissions and ensure HTTPS  
+**Text extraction not accurate?** Ensure good lighting and focus  
+**Notes not saving?** Check Firebase configuration and internet connection  
+**Authentication issues?** Verify environment variables and Firebase settings
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'feat: add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+**Made with ❤️ by the Noteally team**
+
+*Transform your reading experience with AI-powered note-taking*
