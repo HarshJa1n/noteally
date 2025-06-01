@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface TextEditorProps {
   content?: string
@@ -53,6 +53,9 @@ export default function TextEditor({
   fullScreen = false,
   savedStatus = 'saved'
 }: TextEditorProps) {
+  const isUpdatingContentRef = useRef(false)
+  const lastExternalContentRef = useRef(content)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -73,15 +76,27 @@ export default function TextEditor({
     editable,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      if (onUpdate) {
-        onUpdate(editor.getHTML())
+      if (onUpdate && !isUpdatingContentRef.current) {
+        const newContent = editor.getHTML()
+        lastExternalContentRef.current = newContent
+        onUpdate(newContent)
       }
     },
   })
 
   useEffect(() => {
-    if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content)
+    if (editor && content !== lastExternalContentRef.current) {
+      // Only update if the content is actually different from what we have
+      const currentContent = editor.getHTML()
+      if (content !== currentContent) {
+        isUpdatingContentRef.current = true
+        editor.commands.setContent(content, false) // false = don't emit update event
+        lastExternalContentRef.current = content
+        // Reset the flag after a brief timeout to allow the update to complete
+        setTimeout(() => {
+          isUpdatingContentRef.current = false
+        }, 10)
+      }
     }
   }, [content, editor])
 

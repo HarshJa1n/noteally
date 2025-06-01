@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { FirestoreService } from '@/services/firestoreService'
 import { Note } from '@/types/note'
 
@@ -32,16 +32,25 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
   const [error, setError] = useState<string | null>(null)
   const [savedStatus, setSavedStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved')
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [hasUserEdited, setHasUserEdited] = useState(false)
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
+  
+  // Keep track of the last saved content to avoid unnecessary saves
+  const lastSavedContentRef = useRef<string>('')
 
   // Load existing note
   useEffect(() => {
-    if (noteId && userId) {
+    if (noteId && userId && !initialLoadComplete) {
       setIsLoading(true)
       FirestoreService.getNote(noteId, userId)
         .then((loadedNote) => {
           if (loadedNote) {
             setNote(loadedNote)
-            setContent(loadedNote.content)
+            // Only set content from database if user hasn't started editing
+            if (!hasUserEdited) {
+              setContent(loadedNote.content)
+              lastSavedContentRef.current = loadedNote.content
+            }
             setSavedStatus('saved')
           }
         })
@@ -50,18 +59,25 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
           setIsError(true)
           setSavedStatus('error')
         })
-        .finally(() => setIsLoading(false))
+        .finally(() => {
+          setIsLoading(false)
+          setInitialLoadComplete(true)
+        })
+    } else if (!noteId) {
+      // For new notes, mark as initial load complete immediately
+      setInitialLoadComplete(true)
     }
-  }, [noteId, userId])
+  }, [noteId, userId, hasUserEdited, initialLoadComplete])
 
   const updateContent = useCallback((newContent: string) => {
     setContent(newContent)
+    setHasUserEdited(true)
     setError(null)
     setIsError(false)
   }, [])
 
   const saveNote = useCallback(async () => {
-    if (!userId || !note) return
+    if (!userId || !note || content === lastSavedContentRef.current) return
 
     setIsSaving(true)
     setSavedStatus('saving')
@@ -87,6 +103,7 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
         updatedAt: new Date()
       } : null)
 
+      lastSavedContentRef.current = content
       setSavedStatus('saved')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save note'
@@ -100,7 +117,7 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
 
   // Auto-save functionality
   useEffect(() => {
-    if (!userId || !note || content === note.content) return
+    if (!userId || !note || content === lastSavedContentRef.current || !hasUserEdited) return
 
     // Clear existing timeout
     if (autoSaveTimeout) {
@@ -119,7 +136,7 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
     return () => {
       if (timeout) clearTimeout(timeout)
     }
-  }, [content, userId, note, autoSaveDelay, saveNote])
+  }, [content, userId, note, autoSaveDelay, saveNote, hasUserEdited])
 
   const createNewNote = useCallback(async (title?: string): Promise<string | null> => {
     if (!userId) return null
@@ -151,7 +168,9 @@ export function useNote(userId: string | null, options: UseNoteOptions = {}): Us
       }
 
       setNote(newNote)
+      lastSavedContentRef.current = content
       setSavedStatus('saved')
+      setInitialLoadComplete(true)
       return noteId
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create note'

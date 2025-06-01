@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useNote } from '@/hooks/useNote'
 import TextEditor from '@/components/TextEditor'
@@ -9,7 +9,6 @@ import EditorDock from '@/components/EditorDock'
 
 function EditorContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const { user, isAuthenticated } = useAuth()
   
   const noteId = searchParams.get('id')
@@ -41,12 +40,12 @@ function EditorContent() {
       updateContent(newContent)
       
       // If this is a new note and user is authenticated, create it
-      if (!noteId && user?.uid) {
+      if (!noteId && user?.uid && !note) {
         try {
           const newNoteId = await createNewNote()
           if (newNoteId) {
-            // Update URL to include the new note ID
-            router.push(`/editor?id=${newNoteId}`)
+            // Update URL to include the new note ID without triggering a full page reload
+            window.history.replaceState(null, '', `/editor?id=${newNoteId}`)
           }
         } catch (err) {
           console.error('Failed to create new note:', err)
@@ -65,12 +64,13 @@ function EditorContent() {
     updateContent(newContent)
     
     // If this is a new note (no noteId) and user is authenticated, create it
+    // Only create if content is not empty and note doesn't exist yet
     if (!noteId && user?.uid && newContent.trim() && !note) {
       try {
         const newNoteId = await createNewNote()
         if (newNoteId) {
-          // Update URL to include the new note ID
-          router.push(`/editor?id=${newNoteId}`)
+          // Update URL to include the new note ID without triggering a full page reload
+          window.history.replaceState(null, '', `/editor?id=${newNoteId}`)
         }
       } catch (err) {
         console.error('Failed to create new note:', err)
