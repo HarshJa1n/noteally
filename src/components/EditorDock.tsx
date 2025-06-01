@@ -8,12 +8,18 @@ import {
   FileText, 
   Tags, 
   FolderOpen,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Check
 } from 'lucide-react'
 import { Dock, DockIcon, DockItem, DockLabel } from '@/components/ui/dock'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import ImageUpload from '@/components/ImageUpload'
-import CameraCapture from '@/components/CameraCapture'
+import CameraComponent from '@/components/ui/camera/camera'
+import { runFlow } from '@genkit-ai/next/client'
+import { ocrFlow } from '@/genkit/ocrFlow'
 import Link from 'next/link'
 
 interface EditorDockProps {
@@ -21,16 +27,23 @@ interface EditorDockProps {
   onTextExtracted?: (text: string, confidence?: number) => void
   isLoading?: boolean
   extractedText?: string
+  onCapturedImages?: (images: string[]) => void
 }
 
 export default function EditorDock({ 
   onImageSelect, 
   onTextExtracted, 
   isLoading,
-  extractedText 
+  extractedText,
+  onCapturedImages
 }: EditorDockProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [isCameraOpen, setIsCameraOpen] = useState(false)
+  const [capturedImages, setCapturedImages] = useState<string[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showPromptInput, setShowPromptInput] = useState(false)
+  const [ocrPrompt, setOcrPrompt] = useState('')
+  const [ocrSuccess, setOcrSuccess] = useState(false)
 
   const handleImageSelect = (file: File) => {
     if (onImageSelect) {
@@ -46,15 +59,74 @@ export default function EditorDock({
     setIsUploadOpen(false)
   }
 
-  const handleCameraCapture = (imageData: string) => {
-    // Convert base64 to File object for consistency
-    fetch(imageData)
-      .then(res => res.blob())
-      .then(blob => {
-        const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' })
-        handleImageSelect(file)
-      })
-    setIsCameraOpen(false)
+  const handleCameraCapture = (images: string[]) => {
+    console.log('Camera captured images (direct save):', images.length);
+    // Direct save without OCR prompt dialog
+    if (onCapturedImages) {
+      onCapturedImages(images);
+    }
+    setIsCameraOpen(false);
+  }
+
+  const handleOcrProcess = async (images: string[], prompt?: string) => {
+    console.log('Processing OCR with prompt:', prompt, 'Images:', images.length);
+    
+    if (images.length === 0) {
+      alert('No images to process');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      
+      // Process the first captured image
+      const imageData = images[0];
+      const base64 = imageData.split(',')[1];
+      
+      if (!base64) {
+        throw new Error('Invalid image data format');
+      }
+
+      console.log('Making OCR API call...');
+      const result = await runFlow<typeof ocrFlow>({
+        url: '/api/ocr',
+        input: { 
+          imageData: base64,
+          prompt: prompt || 'This is a camera capture of a book page. Please extract all text accurately, maintaining structure and formatting.' 
+        },
+      });
+
+      console.log('OCR result:', result);
+
+      if (!result?.extractedText) {
+        throw new Error('No text extracted from image');
+      }
+
+      // Notify parent component
+      if (onTextExtracted) {
+        onTextExtracted(result.extractedText, result.confidence);
+      }
+
+      // Convert to File object for consistency with existing flow
+      fetch(imageData)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
+          handleImageSelect(file);
+        });
+
+      console.log('OCR processing completed successfully');
+
+    } catch (error) {
+      console.error('OCR processing failed:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`OCR processing failed: ${errorMessage}\n\nPlease try again or check the console for more details.`);
+      
+    } finally {
+      setIsProcessing(false);
+    }
   }
 
   const dockItems = [
@@ -162,21 +234,22 @@ export default function EditorDock({
       </Dialog>
 
       {/* Camera Modal */}
-      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Camera Capture
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <CameraCapture 
-              onCapture={handleCameraCapture}
-              onTextExtracted={handleTextExtracted}
-            />
-          </div>
+      <Dialog open={isCameraOpen} onOpenChange={(open) => {
+        setIsCameraOpen(open);
+        // Don't clear captured images here - only clear when user cancels or completes OCR
+      }}>
+        <DialogContent className="h-svh w-svw max-w-full p-0">
+          <CameraComponent
+            onClosed={() => {
+              setIsCameraOpen(false);
+              // Only clear if user manually closes without capturing
+              if (capturedImages.length === 0) {
+                setCapturedImages([]);
+              }
+            }}
+            onCapturedImages={handleCameraCapture}
+            onOcrProcess={handleOcrProcess}
+          />
         </DialogContent>
       </Dialog>
     </>

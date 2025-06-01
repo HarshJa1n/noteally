@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { CameraProvider } from "@/components/ui/camera/camera-provider";
 import Navigation from "@/components/Navigation";
 import "./globals.css";
 
@@ -29,12 +30,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <Navigation />
-          <main>
-            {children}
-          </main>
-        </AuthProvider>
+        <CameraProvider>
+          <AuthProvider>
+            <Navigation />
+            <main>
+              {children}
+            </main>
+          </AuthProvider>
+        </CameraProvider>
       </body>
     </html>
   );
