@@ -2,20 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useNoteEnrichment } from '@/hooks/useNoteEnrichment'
 import { FirestoreService } from '@/services/firestoreService'
 import { Note } from '@/types/note'
 import Link from 'next/link'
-import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw } from 'lucide-react'
+import { FileText, Plus, Search, Calendar, Tag, AlertCircle, RefreshCw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import NoteEnrichmentDialog from '@/components/NoteEnrichmentDialog'
 
 function NotesContent() {
   const { user, isAuthenticated } = useAuth()
+  const { enrichNote, isEnriching, enrichmentError, lastEnrichmentResult, clearError } = useNoteEnrichment()
   const [notes, setNotes] = useState<Note[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [retryCount, setRetryCount] = useState(0)
+  const [selectedNoteForEnrichment, setSelectedNoteForEnrichment] = useState<Note | null>(null)
+  const [isEnrichmentDialogOpen, setIsEnrichmentDialogOpen] = useState(false)
+  const [isApplyingEnrichment, setIsApplyingEnrichment] = useState(false)
 
   // Fetch notes when user is available and authenticated
   useEffect(() => {
@@ -57,6 +63,47 @@ function NotesContent() {
       setRetryCount(prev => prev + 1)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleEnrichNote = async (note: Note) => {
+    if (!note.content || note.content.trim().length === 0) {
+      setError('Cannot enrich note: Note content is empty')
+      return
+    }
+
+    setSelectedNoteForEnrichment(note)
+    clearError()
+
+    const result = await enrichNote(note)
+    if (result) {
+      setIsEnrichmentDialogOpen(true)
+    }
+  }
+
+  const handleApplyEnrichment = async (updates: Partial<Note>) => {
+    if (!selectedNoteForEnrichment || !user?.uid) return
+
+    setIsApplyingEnrichment(true)
+    try {
+      await FirestoreService.updateNote(selectedNoteForEnrichment.id, user.uid, updates)
+      
+      // Update the local notes state
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.id === selectedNoteForEnrichment.id 
+            ? { ...note, ...updates, updatedAt: new Date() }
+            : note
+        )
+      )
+
+      setIsEnrichmentDialogOpen(false)
+      setSelectedNoteForEnrichment(null)
+    } catch (err) {
+      console.error('Error applying enrichment:', err)
+      setError(err instanceof Error ? err.message : 'Failed to apply enrichment')
+    } finally {
+      setIsApplyingEnrichment(false)
     }
   }
 
@@ -111,15 +158,17 @@ function NotesContent() {
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
         {/* Error handling */}
-        {error && (
+        {(error || enrichmentError) && (
           <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
             <div className="flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <p className="font-medium">Error loading notes</p>
-                <p className="text-sm mt-1">{error}</p>
+                <p className="font-medium">
+                  {error ? 'Error loading notes' : 'Error enriching note'}
+                </p>
+                <p className="text-sm mt-1">{error || enrichmentError}</p>
                 
-                {retryCount > 2 && (
+                {error && retryCount > 2 && (
                   <div className="mt-3 text-xs bg-red-200 rounded p-2">
                     <p className="font-medium">Multiple retry attempts failed.</p>
                     <p>This might indicate a Firebase configuration issue:</p>
@@ -133,24 +182,36 @@ function NotesContent() {
                 )}
                 
                 <div className="mt-3 space-x-2">
-                  <Button 
-                    onClick={fetchNotes} 
-                    variant="outline" 
-                    size="sm"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700 mr-2"></div>
-                        Retrying...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-3 w-3 mr-2" />
-                        Try Again ({retryCount + 1})
-                      </>
-                    )}
-                  </Button>
+                  {error && (
+                    <Button 
+                      onClick={fetchNotes} 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-red-700 mr-2"></div>
+                          Retrying...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-3 w-3 mr-2" />
+                          Try Again ({retryCount + 1})
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {enrichmentError && (
+                    <Button 
+                      onClick={clearError} 
+                      variant="outline" 
+                      size="sm"
+                    >
+                      Dismiss
+                    </Button>
+                  )}
                   
                   <Link href="/editor">
                     <Button variant="outline" size="sm">
@@ -195,32 +256,58 @@ function NotesContent() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredNotes.map((note) => (
-              <Link key={note.id} href={`/editor?id=${note.id}`}>
-                <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {note.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {note.excerpt || 'No preview available'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>
-                        {new Date(note.updatedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    
-                    {note.tags.length > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <Tag className="h-3 w-3" />
-                        <span>{note.tags.length} tags</span>
-                      </div>
-                    )}
+              <div key={note.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                <Link href={`/editor?id=${note.id}`}>
+                  <div className="cursor-pointer">
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {note.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {note.excerpt || 'No preview available'}
+                    </p>
                   </div>
+                </Link>
+                
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="h-3 w-3" />
+                    <span>
+                      {new Date(note.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  
+                  {note.tags.length > 0 && (
+                    <div className="flex items-center space-x-1">
+                      <Tag className="h-3 w-3" />
+                      <span>{note.tags.length} tags</span>
+                    </div>
+                  )}
                 </div>
-              </Link>
+
+                {/* Enrich Note Button */}
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleEnrichNote(note)
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full flex items-center gap-2"
+                  disabled={isEnriching && selectedNoteForEnrichment?.id === note.id}
+                >
+                  {isEnriching && selectedNoteForEnrichment?.id === note.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-600"></div>
+                      Enriching...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3 w-3" />
+                      Enrich Note Details
+                    </>
+                  )}
+                </Button>
+              </div>
             ))}
           </div>
         )}
@@ -233,6 +320,21 @@ function NotesContent() {
           </div>
         )}
       </div>
+
+      {/* Enrichment Dialog */}
+      {selectedNoteForEnrichment && lastEnrichmentResult && (
+        <NoteEnrichmentDialog
+          isOpen={isEnrichmentDialogOpen}
+          onClose={() => {
+            setIsEnrichmentDialogOpen(false)
+            setSelectedNoteForEnrichment(null)
+          }}
+          note={selectedNoteForEnrichment}
+          enrichmentResult={lastEnrichmentResult}
+          onApply={handleApplyEnrichment}
+          isApplying={isApplyingEnrichment}
+        />
+      )}
     </div>
   )
 }
