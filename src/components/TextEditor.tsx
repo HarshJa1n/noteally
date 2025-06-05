@@ -3,6 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
+import { Markdown } from 'tiptap-markdown'
 import { useEffect, useRef } from 'react'
 
 interface TextEditorProps {
@@ -70,6 +71,15 @@ export default function TextEditor({
       }),
       Placeholder.configure({
         placeholder,
+      }),
+      Markdown.configure({
+        html: true,                  // Allow HTML input/output
+        tightLists: true,            // No <p> inside <li> in markdown output
+        bulletListMarker: '-',       // <li> prefix in markdown output
+        linkify: false,              // Create links from "https://..." text
+        breaks: false,               // New lines (\n) in markdown input are converted to <br>
+        transformPastedText: true,   // Allow to paste markdown text in the editor
+        transformCopiedText: false,  // Copied text is transformed to markdown
       }),
     ],
     content,
@@ -248,7 +258,7 @@ export default function TextEditor({
             <span>~{Math.ceil(editor.getCharacterCount() / 5)} words</span>
           </div>
           <div className="text-right">
-            <span>Use Ctrl+B for bold, Ctrl+I for italic</span>
+            <span>Markdown: **bold**, *italic*, # heading, - list, {'>'}quote</span>
           </div>
         </div>
       )}
