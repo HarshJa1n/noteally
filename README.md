@@ -14,6 +14,31 @@ Noteally is a minimalist, photo-based notepad web application designed for stude
 - 🌐 **Cross-Device Sync**: Access notes anywhere with real-time synchronization
 - 📱 **Mobile Optimized**: Full-featured experience on all devices
 
+## 📸 Product Showcase
+
+![Beautiful Landing Page](docs/screenshots/01-noteally-landing-page.png)
+🌟 **Beautiful Landing Page**: Clean design showcasing AI-powered OCR technology for students, researchers, and book lovers
+
+![Simple Authentication](docs/screenshots/02-noteally-signup-page.png)
+🔐 **Simple Authentication**: Quick sign-up with email/password or Google integration for seamless onboarding
+
+![Notes Dashboard](docs/screenshots/04-noteally-notes-dashboard.png)
+📚 **Smart Dashboard**: Organized note management with search, tags, previews, and quick actions
+
+![Rich Text Editor](docs/screenshots/05-noteally-editor-with-markdown.png)
+✏️ **Rich Markdown Editor**: Full-featured editor with live markdown support and formatting toolbar
+
+![Smart OCR Upload](docs/screenshots/07-noteally-upload-with-ocr-settings.png)
+🤖 **Smart OCR Upload**: Advanced image upload with custom AI instructions for precise text extraction
+
+### 🎯 Key Workflow Features
+
+- **📖 Smart Text Extraction**: Upload book photos with custom OCR instructions
+- **⚡ Live Markdown Rendering**: Type `**bold**`, `*italic*`, `# headings` for instant formatting  
+- **🔍 Intelligent Search**: Find any content across your entire digital library
+- **🏷️ Auto-Tagging**: AI-powered categorization and smart organization
+- **☁️ Real-time Sync**: Access your notes from any device, anywhere
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -82,6 +107,7 @@ noteally/
 │   ├── lib/                   # Firebase, Gemini AI integration
 │   ├── hooks/                 # Custom React hooks
 │   └── types/                 # TypeScript definitions
+├── docs/screenshots/          # Product showcase images
 ├── firestore.rules           # Database security rules
 └── firebase.json             # Firebase configuration
 ```
