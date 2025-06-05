@@ -47,7 +47,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.2.3",
-    "tailwind-merge": "^3.3.0"
+    "tailwind-merge": "^3.3.0",
+    "tiptap-markdown": "^0.8.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

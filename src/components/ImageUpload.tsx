@@ -4,6 +4,15 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { runFlow } from '@genkit-ai/next/client'
 import { ocrFlow } from '@/genkit/ocrFlow'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Sparkles, Settings } from 'lucide-react'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 interface ImageUploadProps {
   onImageSelect?: (file: File) => void
@@ -23,8 +32,11 @@ interface UploadedFile {
 export default function ImageUpload({ onImageSelect, onTextExtracted, className = '' }: ImageUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [error, setError] = useState<string>('')
+  const [ocrPrompt, setOcrPrompt] = useState('')
+  const [showPromptInput, setShowPromptInput] = useState(false)
+  const [useCustomPrompt, setUseCustomPrompt] = useState(false)
 
-  const processImageOCR = async (file: File, fileId: string) => {
+  const processImageOCR = async (file: File, fileId: string, customPrompt?: string) => {
     try {
       // Update file status to processing
       setUploadedFiles(prev => 
@@ -42,12 +54,15 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
         reader.readAsDataURL(file)
       })
 
+      // Determine the prompt to use
+      const promptToUse = customPrompt || 'This is a book page. Please extract all text accurately, maintaining structure and formatting.'
+
       // Call the OCR flow
       const result = await runFlow<typeof ocrFlow>({
         url: '/api/ocr',
         input: { 
           imageData: base64,
-          prompt: 'This is a book page. Please extract all text accurately, maintaining structure and formatting.' 
+          prompt: promptToUse
         },
       })
 
@@ -112,12 +127,13 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
           onImageSelect(file)
         }
 
-        // Automatically start OCR processing
-        processImageOCR(file, newFile.id)
+        // Start OCR processing with appropriate prompt
+        const promptToUse = useCustomPrompt && ocrPrompt ? ocrPrompt : undefined
+        processImageOCR(file, newFile.id, promptToUse)
       }
       reader.readAsDataURL(file)
     })
-  }, [onImageSelect, onTextExtracted])
+  }, [onImageSelect, onTextExtracted, useCustomPrompt, ocrPrompt])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -133,6 +149,13 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
     setUploadedFiles(prev => prev.filter(file => file.id !== id))
   }
 
+  const reprocessFile = (fileId: string, customPrompt?: string) => {
+    const file = uploadedFiles.find(f => f.id === fileId)
+    if (file) {
+      processImageOCR(file.file, fileId, customPrompt)
+    }
+  }
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -143,6 +166,61 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
 
   return (
     <div className={`w-full ${className}`}>
+      {/* OCR Settings */}
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-medium text-gray-900">Upload Images for OCR</h3>
+        <Popover open={showPromptInput} onOpenChange={setShowPromptInput}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              OCR Settings
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" side="bottom" align="end">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  Custom OCR Instructions
+                </Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="use-custom-prompt"
+                      checked={useCustomPrompt}
+                      onChange={(e) => setUseCustomPrompt(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="use-custom-prompt" className="text-sm">
+                      Use custom instructions
+                    </Label>
+                  </div>
+                  {useCustomPrompt && (
+                    <Input
+                      placeholder="e.g., 'Extract only highlighted text' or 'Focus on handwritten notes'"
+                      value={ocrPrompt}
+                      onChange={(e) => setOcrPrompt(e.target.value)}
+                      className="text-sm"
+                    />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {useCustomPrompt 
+                    ? "Custom instructions will be used for new uploads" 
+                    : "Default: Extract all text accurately, maintaining structure and formatting"
+                  }
+                </p>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {/* Dropzone Area */}
       <div
         {...getRootProps()}
@@ -184,6 +262,11 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
               </p>
               <p className="text-xs text-blue-600">
                 Text will be automatically extracted using AI
+                {useCustomPrompt && ocrPrompt && (
+                  <span className="block mt-1 text-yellow-600">
+                    Using custom instructions: "{ocrPrompt.substring(0, 50)}{ocrPrompt.length > 50 ? '...' : ''}"
+                  </span>
+                )}
               </p>
             </div>
           )}
@@ -240,11 +323,60 @@ export default function ImageUpload({ onImageSelect, onTextExtracted, className 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium text-gray-900">Extracted Text</h4>
-                      {uploadedFile.confidence && (
-                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                          {Math.round(uploadedFile.confidence * 100)}% confidence
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {uploadedFile.confidence && (
+                          <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                            {Math.round(uploadedFile.confidence * 100)}% confidence
+                          </span>
+                        )}
+                        {!uploadedFile.isProcessing && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs gap-1"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                Reprocess
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80" side="bottom" align="end">
+                              <div className="space-y-3">
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium">
+                                    Custom OCR Instructions
+                                  </Label>
+                                  <Input
+                                    placeholder="e.g., 'Extract only highlighted text'"
+                                    className="text-sm"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const input = e.target as HTMLInputElement
+                                        reprocessFile(uploadedFile.id, input.value || undefined)
+                                        input.value = ''
+                                      }
+                                    }}
+                                  />
+                                  <p className="text-xs text-gray-500">
+                                    Leave empty for default extraction. Press Enter to reprocess.
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => reprocessFile(uploadedFile.id)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1"
+                                  >
+                                    Default Extract
+                                  </Button>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
                     </div>
                     
                     {uploadedFile.isProcessing ? (
